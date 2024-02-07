@@ -7,37 +7,30 @@ def load_model(model_path):
     model = joblib.load(model_path)
     return model
 
-# Membuat sidebar untuk input parameter
+st.set_page_config(page_title="Prediksi Harga Emas", page_icon=":money_with_wings:")
+
+st.title("Prediksi Harga Emas")
+st.write("Prediksi harga emas berdasarkan IHSG, Inflasi, dan Kurs Dollar menggunakan model Decision Tree, Random Forest, atau AdaBoost.")
+
+# Input pengguna di sidebar
 st.sidebar.header('Input Parameter')
+ihsg_close = st.sidebar.number_input('IHSG Close', format="%.2f")
+kurs_jual = st.sidebar.number_input('Kurs Jual', format="%.2f")
+kurs_beli = st.sidebar.number_input('Kurs Beli', format="%.2f")
+data_inflasi = st.sidebar.number_input('Data Inflasi (dalam persen, contoh: masukkan 3.5 untuk 3,5%)', format="%.2f")
+inflasi_desimal = data_inflasi / 100  # Konversi inflasi ke bentuk desimal
 
-def user_input_features():
-    ihsg_close = st.sidebar.number_input('IHSG Close')
-    kurs_jual = st.sidebar.number_input('Kurs Jual')
-    kurs_beli = st.sidebar.number_input('Kurs Beli')
-    data_inflasi = st.sidebar.number_input('Data Inflasi', format="%f")
-    data = {'IHSG Close': ihsg_close,
-            'Kurs Jual': kurs_jual,
-            'Kurs Beli': kurs_beli,
-            'Data Inflasi': data_inflasi}
-    features = pd.DataFrame(data, index=[0])
-    return features
+# Membuat DataFrame dari input pengguna
+input_df = pd.DataFrame([[ihsg_close, kurs_jual, kurs_beli, inflasi_desimal]], columns=['IHSG Close', 'Kurs Jual', 'Kurs Beli', 'Data Inflasi'])
 
-df = user_input_features()
+model_option = st.selectbox("Pilih Model untuk Prediksi:", ['Decision Tree', 'Random Forest', 'AdaBoost'])
 
-st.subheader('Parameter Input Pengguna')
-st.write(df)
+# Memuat model berdasarkan pilihan pengguna
+model_paths = {'Decision Tree': 'decision_tree_tuned.pkl', 'Random Forest': 'random_forest_tuned.pkl', 'AdaBoost': 'adaboost_tuned.pkl'}
+model = load_model(model_paths[model_option])
 
-# Memuat model (ganti 'model_path' dengan path yang sesuai)
-model_rf = load_model('random_forest_tuned.pkl')
-model_dt = load_model('decision_tree_tuned.pkl')
-model_ab = load_model('adaboost_tuned.pkl')
-
-# Membuat prediksi
-prediction_rf = model_rf.predict(df)
-prediction_dt = model_dt.predict(df)
-prediction_ab = model_ab.predict(df)
-
-st.subheader('Prediksi Harga Emas')
-st.write(f'Random Forest: {prediction_rf[0]}')
-st.write(f'Decision Tree: {prediction_dt[0]}')
-st.write(f'AdaBoost: {prediction_ab[0]}')
+# Tombol prediksi
+if st.button("Prediksi Harga"):
+    predicted_price = model.predict(input_df)[0]
+    st.write("")
+    st.subheader(f"Harga Emas yang Diprediksi: Rp {predicted_price:,.2f} menggunakan model {model_option}")
